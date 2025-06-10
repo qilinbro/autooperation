@@ -70,14 +70,97 @@ class AutoMouseOperation:
         """自动打开微信并给朋友圈点赞"""
         try:
             # 打开微信
-            if not self.locate_and_click('wechat.png', clicks=2):
-                return
-            time.sleep(2)  # 增加等待时间
+            def wait_for_image(self, image_name: str, timeout: int = 12, interval: int = 2) -> bool:
+                """等待直到图片出现在屏幕上"""
+                for _ in range(timeout // interval):
+                    try:
+                        if pyautogui.locateOnScreen(self.get_image_path(image_name), confidence=0.8):
+                            return True
+                    except Exception:
+                        pass
+                    time.sleep(interval)
+                return False
+
+            # 尝试打开微信并等待朋友圈按钮出现
+            max_attempts = 5
+            success = False
             
-            # 打开朋友圈
-            if not self.locate_and_click('moment.png'):
+            for attempt in range(max_attempts):
+                logging.info(f"第 {attempt + 1} 次尝试打开微信")
+                try:
+                    image_path = self.get_image_path('wechat.png')
+                    location = pyautogui.locateOnScreen(image_path, confidence=0.8)
+                    if location:
+                        pyautogui.doubleClick(location)
+                        logging.info("执行了双击操作")
+                        if self.wait_for_image('moment.png'):
+                            logging.info("微信已成功打开（已看到朋友圈按钮）")
+                            success = True
+                            break
+                except Exception as e:
+                    logging.error(f"双击操作失败: {str(e)}")
+                time.sleep(2)
+            
+            if not success:
+                logging.error(f"尝试 {max_attempts} 次后仍未能成功打开微信")
                 return
-            time.sleep(2)  # 增加等待时间
+
+            # 点击朋友圈并等待更多按钮出现
+            max_attempts = 3
+            success = False
+            
+            for attempt in range(max_attempts):
+                logging.info(f"第 {attempt + 1} 次尝试进入朋友圈")
+                if self.locate_and_click('moment.png', confidence=0.8):
+                    if self.wait_for_image('more.png'):
+                        logging.info("朋友圈已成功打开（已看到更多按钮）")
+                        success = True
+                        break
+                time.sleep(2)
+            
+            if not success:
+                logging.error(f"尝试 {max_attempts} 次后仍未能成功进入朋友圈")
+                return
+                        # 等待并检查朋友圈按钮是否出现
+                        for check in range(6):  # 最多等待12秒
+                            time.sleep(2)
+                            try:
+                                if pyautogui.locateOnScreen(self.get_image_path('moment.png'), confidence=0.8):
+                                    logging.info("微信已成功打开（已看到朋友圈按钮）")
+                                    break
+                            except Exception:
+                                pass
+                        else:
+                            logging.info("未能看到朋友圈按钮，重试打开微信")
+                            continue
+                        break
+                time.sleep(2)
+            else:
+                logging.error(f"尝试 {max_attempts} 次后仍未能成功打开微信")
+                return
+
+            # 点击朋友圈并等待直到看到"更多"按钮
+            max_attempts = 3
+            for attempt in range(max_attempts):
+                logging.info(f"第 {attempt + 1} 次尝试进入朋友圈")
+                if self.locate_and_click('moment.png', confidence=0.8):
+                    # 等待并检查更多按钮是否出现
+                    for check in range(6):  # 最多等待12秒
+                        time.sleep(2)
+                        try:
+                            if pyautogui.locateOnScreen(self.get_image_path('more.png'), confidence=0.8):
+                                logging.info("朋友圈已成功打开（已看到更多按钮）")
+                                break
+                        except Exception:
+                            pass
+                    else:
+                        logging.info("未能看到更多按钮，重试进入朋友圈")
+                        continue
+                    break
+                time.sleep(2)
+            else:
+                logging.error(f"尝试 {max_attempts} 次后仍未能成功进入朋友圈")
+                return
             
             while True:
                 # 检查是否存在更多按钮
