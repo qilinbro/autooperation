@@ -10,6 +10,11 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 class AutoMouseOperation:
     """自动鼠标操作类，用于处理微信朋友圈自动点赞"""
     
+    DEFAULT_CONFIDENCES = [0.9, 0.8, 0.7]
+    DEFAULT_TIMEOUT = 12
+    DEFAULT_INTERVAL = 2
+    MAX_ATTEMPTS = 3
+    
     def __init__(self, image_folder: str = 'position'):
         """
         初始化自动鼠标操作类
@@ -23,13 +28,13 @@ class AutoMouseOperation:
         """获取图片的完整路径"""
         return os.path.join(self.image_folder, image_name)
         
-    def wait_for_image(self, image_name: str, timeout: int = 12, interval: int = 2) -> bool:
+    def wait_for_image(self, image_name: str, timeout: int = DEFAULT_TIMEOUT, interval: int = DEFAULT_INTERVAL) -> bool:
         """等待直到图片出现在屏幕上"""
         image_path = self.get_image_path(image_name)
         end_time = time.time() + timeout
         
         while time.time() < end_time:
-            for confidence in [0.9, 0.8, 0.7]:  # 逐步降低匹配精度
+            for confidence in self.DEFAULT_CONFIDENCES:  # 逐步降低匹配精度
                 try:
                     logging.info(f"尝试以 {confidence} 的置信度等待图片: {image_name}")
                     if pyautogui.locateOnScreen(image_path, confidence=confidence):
@@ -64,7 +69,7 @@ class AutoMouseOperation:
             logging.info(f"正在查找图片: {image_name}")
             
             # 添加重试机制
-            max_attempts = 3
+            max_attempts = self.MAX_ATTEMPTS
             for attempt in range(max_attempts):
                 try:
                     # 增加识别容错性
@@ -172,7 +177,7 @@ class AutoMouseOperation:
                 more_found = False
                 
                 # 增加识别容错性
-                for conf in [0.9, 0.8, 0.7]:
+                for conf in self.DEFAULT_CONFIDENCES:
                     try:
                         logging.info(f"尝试以 {conf} 的置信度查找更多按钮")
                         if pyautogui.locateOnScreen(image_path_more, confidence=conf):
@@ -195,7 +200,7 @@ class AutoMouseOperation:
                     good_found = False
                     
                     # 增加识别容错性
-                    for conf in [0.9, 0.8, 0.7]:
+                    for conf in self.DEFAULT_CONFIDENCES:
                         try:
                             logging.info(f"尝试以 {conf} 的置信度查找点赞按钮")
                             if pyautogui.locateOnScreen(image_path_good, confidence=conf):
@@ -261,7 +266,7 @@ class AutoMouseOperation:
                                         try:
                                             pyautogui.click()
                                             logging.info(f"第 {focus_attempt + 1} 次点击聚焦成功")
-                                            time.sleep(1.5)  # 增加等待时间确保聚焦完成
+                                            time.sleep(0.7)  # 减少聚焦等待时间
                                             focus_success = True
                                             break
                                         except Exception as e:
@@ -285,7 +290,7 @@ class AutoMouseOperation:
                                             pyautogui.scroll(-200)  # 适当增加滚动幅度
                                             scroll_success += 1
                                             logging.info(f"完成第 {i+1} 次滚动")
-                                            time.sleep(1.5)  # 增加滚动间隔以确保页面响应
+                                            time.sleep(0.7)  # 减少滚动间隔时间
                                         except Exception as e:
                                             logging.error(f"第 {i+1} 次滚动失败: {str(e)}, 错误类型: {type(e).__name__}")
                                             time.sleep(1)  # 失败后等待一下再继续尝试
